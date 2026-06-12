@@ -45,10 +45,6 @@ async function run(job) {
     return;
   }
 
-  setStatus("환율 불러오는 중…");
-  let fx = null;
-  try { fx = await fetchRates(); } catch (e) { setStatus("환율 API 실패 — 표시가만 비교합니다."); }
-
   const results = [];
   for (let i = 0; i < combos.length; i++) {
     const c = combos[i];
@@ -62,7 +58,7 @@ async function run(job) {
       scraped = { error: String((e && e.message) || e) };
     }
     results.push({ ...c, url, ...scraped });
-    render(results, fx); // 한 건씩 즉시 갱신
+    render(results); // 한 건씩 즉시 갱신
     if (i < combos.length - 1) await sleep(BETWEEN_DELAY);
   }
 
@@ -339,7 +335,7 @@ function normalizeCountry(raw) {
 }
 
 // 할인은 통화가 아니라 언어(로케일=POS)로 걸린다는 실측에 따라,
-// 통화는 KRW로 고정하고 다양한 로케일을 훑는다(환율 노이즈 없이 원화로 직접 비교).
+// 통화는 KRW로 고정하고 다양한 로케일만 훑는다(같은 통화라 가격 직접 비교).
 const SWEEP_LOCALES = [
   "ko-kr", "en-us", "en-gb", "ja-jp", "zh-cn", "zh-tw",
   "th-th", "vi-vn", "id-id", "en-sg", "en-au",
@@ -360,52 +356,38 @@ function buildAutoCombos(cc) {
   return out;
 }
 
-// ── 환율 ──
-async function fetchRates() {
-  const r = await fetch("https://open.er-api.com/v6/latest/USD");
-  const j = await r.json();
-  if (!j || !j.rates) throw new Error("rates 없음");
-  return j.rates;
-}
-
-function toKRW(value, currency, rates) {
-  if (!rates || !currency || !rates[currency] || !rates.KRW) return null;
-  return value * (rates.KRW / rates[currency]);
-}
-
 // ── 출력 ──
-function render(results, rates) {
+// 통화는 KRW로 고정되므로 환산 없이 표시가 그대로 비교한다.
+// 최저가는 같은 통화끼리만 비교(혹시 아고다가 통화를 강제로 바꾼 행은 제외).
+function render(results) {
   const tbody = $("results").querySelector("tbody");
   tbody.innerHTML = "";
 
-  const enriched = results.map((r) => {
-    const krw = (r.price && (r.currency || r.cur))
-      ? toKRW(r.price, r.currency || r.cur, rates)
-      : null;
-    return { ...r, krw };
-  });
+  const curOf = (r) => r.currency || r.cur;
+  const valid = results.filter((r) => r.price != null);
+  const targetCur = valid.length
+    ? (valid.some((r) => curOf(r) === "KRW") ? "KRW" : curOf(valid[0]))
+    : null;
+  const pool = valid.filter((r) => curOf(r) === targetCur);
+  const minPrice = pool.length ? Math.min(...pool.map((r) => r.price)) : null;
 
-  const valid = enriched.filter((r) => r.krw != null);
-  const minKrw = valid.length ? Math.min(...valid.map((r) => r.krw)) : null;
-
-  for (const r of enriched) {
+  for (const r of results) {
     const tr = document.createElement("tr");
-    const isBest = r.krw != null && r.krw === minKrw;
+    const isBest =
+      r.price != null && curOf(r) === targetCur && r.price === minPrice;
     if (isBest) tr.className = "best";
 
-    const cur = r.currency || r.cur;
     const shown = r.price != null
-      ? `${cur} ${Number(r.price).toLocaleString("en-US")}`
+      ? `${curOf(r)} ${Number(r.price).toLocaleString("en-US")}`
       : (r.raw || "");
-    const disp = r.error
-      ? `<td class="err" colspan="2">${esc(r.error)}</td>`
-      : `<td title="${esc(r.raw || "")}">${esc(shown)}</td>
-         <td>${r.krw != null ? fmtKRW(r.krw) : "—"}${isBest ? '<span class="badge">최저</span>' : ""}</td>`;
+    const priceCell = r.error
+      ? `<td class="err">${esc(r.error)}</td>`
+      : `<td title="${esc(r.raw || "")}">${esc(shown)}${isBest ? '<span class="badge">최저</span>' : ""}</td>`;
 
     tr.innerHTML = `
       <td>${esc(r.locale)}</td>
       <td>${esc(r.cur)}</td>
-      ${disp}
+      ${priceCell}
       <td><a href="${esc(r.url)}" class="open-btn" data-url="${esc(r.url)}"
              title="아고다 쿠키를 비우고 해당 로케일/통화로 엽니다">열기</a></td>`;
     tbody.appendChild(tr);
@@ -420,16 +402,11 @@ function render(results, rates) {
   });
 
   $("results").hidden = false;
-  if (rates) {
-    $("fxnote").textContent =
-      "원화 환산: 실시간 환율(open.er-api.com) 기준 · 아고다 자체 환전과 다를 수 있음";
-  }
 }
 
 // ── 유틸 ──
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 function setStatus(s) { $("status").textContent = s; }
-function fmtKRW(v) { return "₩" + Math.round(v).toLocaleString("ko-KR"); }
 function esc(s) {
   return String(s).replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
