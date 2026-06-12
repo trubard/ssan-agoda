@@ -22,16 +22,22 @@
 3. **압축해제된 확장 프로그램을 로드합니다** 클릭
 4. 이 저장소의 `extension/` 폴더 선택
 
-## 자동 설치 (macOS)
+## 자동 설치 (OS별 원클릭, 스토어 불필요)
 
-개발자 모드 없이 **더블클릭 한 번**으로 설치 + 자동 업데이트:
+크롬 정책(`ExtensionInstallForcelist`)에 등록 → 크롬 재시작 시 자동 설치 + 자동 업데이트.
 
-1. `install.command` 더블클릭 (Terminal에서 실행됨)
-2. 크롬을 완전히 종료(⌘Q) 후 다시 실행
-3. 끝 — 이후 새 버전이 올라오면 크롬이 알아서 업데이트
+| OS | 실행 파일 | 관리자 권한 | 제거 |
+|----|-----------|-------------|------|
+| macOS | `install.command` 더블클릭 | 불필요 | `uninstall.command` |
+| Windows | `install.bat` 더블클릭 | 불필요(HKCU) | `uninstall.bat` |
+| Linux | `bash install.sh` | 필요(sudo) | `bash uninstall.sh` |
+| ChromeOS(일반) | 불가 — 관리형 기기만 Admin 콘솔로 가능 | — | — |
 
-> 크롬 정책(`ExtensionInstallForcelist`)에 등록하는 방식이라 관리자 권한이 필요 없습니다. 제거는 `uninstall.command` 더블클릭.
-> 동작 원리: 정책이 `dist/update.xml`을 가리키고, 거기서 `dist/ssan-agoda.crx`를 받아 설치합니다. 확장 ID는 `ggjogpplbgneanckpfgmdghmkhbddjon`(서명키로 고정).
+설치 후 **크롬을 완전히 종료했다가 다시 실행**하고, `chrome://policy`에서 `ExtensionInstallForcelist`에 `ggjogpplbgneanckpfgmdghmkhbddjon`이 보이면 성공입니다.
+
+> 동작 원리: 정책이 `dist/update.xml`을 가리키고, 거기서 `dist/ssan-agoda.crx`를 받아 설치합니다. 확장 ID는 서명키로 고정됩니다.
+> 한계: 크롬은 스토어 밖 설치를 OS 정책으로만 허용하므로 "모든 환경 단일 파일 원클릭"은 불가능합니다. 일반 ChromeOS는 자체 설치 자체가 막혀 있습니다. 진짜 범용 원클릭이 필요하면 크롬 웹스토어(비공개 등록)뿐입니다.
+> 다운로드해 실행할 경우 OS 보안경고(Gatekeeper/SmartScreen)가 뜰 수 있어, 우클릭→열기 등으로 한 번 허용해야 합니다.
 
 ## 사용
 
