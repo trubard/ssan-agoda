@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <h1>아고다 가격 비교기</h1>
+
+  <label class="field">
+    <span>아고다 호텔 URL</span>
+    <textarea id="url" rows="3" placeholder="https://www.agoda.com/ko-kr/.../hotel/....html?checkIn=..."></textarea>
+  </label>
+
+  <label class="check">
+    <input id="auto" type="checkbox" checked />
+    <span><b>자동 모드</b> — 숙소 국가를 감지해 현지 로케일·통화를 자동 비교 (아래 수동 목록은 무시)</span>
+  </label>
+
+  <div class="row">
+    <label class="field half">
+      <span>로케일 (쉼표 구분)</span>
+      <input id="locales" type="text"
+        value="ko-kr, en-us, en-gb, ja-jp, zh-cn, zh-tw, th-th, vi-vn, en-sg, en-au" />
+    </label>
+    <label class="field half">
+      <span>통화 (쉼표 구분)</span>
+      <input id="currencies" type="text"
+        value="KRW, USD, JPY, EUR, GBP, SGD, THB, HKD" />
+    </label>
+  </div>
+
+  <label class="check">
+    <input id="full" type="checkbox" />
+    <span>전체 조합 (로케일 × 통화 전부) — 탭이 많아집니다</span>
+  </label>
+
+  <p class="foot">기본 모드는 <b>로케일별(KRW 고정) + 통화별(첫 로케일 고정)</b>로 비교합니다. 각 접속 전 아고다 쿠키를 초기화합니다(로그인/선호 설정이 풀릴 수 있음).</p>
+
+  <button id="start">새 창에서 분석</button>
+
+  <p id="status" class="status"></p>
+  <p class="foot">결과는 별도 창에서 표시됩니다. 그 창은 닫지 않는 한 백그라운드에서 계속 수집합니다.</p>
+
+  <script src="popup.js"></script>
+</body>
+</html>

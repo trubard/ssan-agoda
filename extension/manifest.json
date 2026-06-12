@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "아고다 가격 비교기",
+  "version": "0.1.0",
+  "description": "아고다 숙소를 로케일·통화별로 자동 접속해 가격을 수집하고 원화로 환산 비교합니다.",
+  "permissions": ["tabs", "scripting", "storage", "cookies"],
+  "host_permissions": [
+    "*://*.agoda.com/*",
+    "https://open.er-api.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "아고다 가격 비교기"
+  }
+}
